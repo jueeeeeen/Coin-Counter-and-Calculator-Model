@@ -1,2 +1,7 @@
 dataset/
 .DS_Store
+datasetCoco/
+*.pt
+*.pth
+*.zip
+*.ttf
