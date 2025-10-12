@@ -1,6 +1,7 @@
 dataset/
 .DS_Store
 datasetCoco/
+datasetCocoTrainTest/
 *.pt
 *.pth
 *.zip
