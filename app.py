@@ -3,12 +3,8 @@ import numpy as np
 import pandas as pd
 import time
 from PIL import Image
-from YOLOv8.app_result.detect import run_YOLO_detection
-# from YOLOv8.app_result.run_GradCAM import run_YOLO_gradcam
-import tempfile
-import nbformat
+from YOLOv8.app_result.all_result import run_yolo_result
 import os
-from nbclient import NotebookClient
 
 
 models = ["YOLOv8", "ResNet50", "See Both"]
@@ -34,58 +30,46 @@ img_file = st.file_uploader(
     "We recommend taking picture clearly and using plain background with enough light for the best result!",
     img_types
     )
-st.image(img_file, width=100)
+if img_file:
+    st.image(img_file, width=100)
 ''
 
 st.subheader("👀 See the result")
-'Please select a model and upload an image to proceed.'
+if not img_file:
+    ':red[Please upload an image to proceed.]'
 
-btn_disable = False if img_file else True
+submit_btn = st.button("Submit", type="primary", disabled=(img_file == None))
+loading_placeholder = st.empty()
+YOLO_tab, ResNet_tab = st.tabs(models[:2])
+yolo_section = YOLO_tab.pills(None, options=sections, default=sections[0], key="yolo")
+resnet_section = ResNet_tab.pills(None, options=sections, default=sections[0], key="resnet")
 
-st.button("Submit", type="primary", disabled=btn_disable)
-
-if not btn_disable:
-# if st.button("Submit", type="primary", disabled=btn_disable) and model:
+# if not btn_disable:
+if submit_btn:
+    st.session_state.clear()
+    # open uploaded image
     image = Image.open(img_file)
-    result_img, counts, total_count = run_YOLO_detection(image)
     
-    tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
-    tmp_path = tmp.name
-    tmp.close()  # CLOSE IT → unlocks it on Windows
-
-    # Now save to the path safely
-    image.save(tmp_path)
-
-    # Pass the path to your original Grad-CAM
-    # gradcam_output = run_YOLO_gradcam(tmp_path)
-    # Load the notebook
-    nb = nbformat.read("./YOLOv8/app_result/grad_cam.ipynb", as_version=4)
+    # START: YOLOv8 model ----------------------------------------------------
+    with loading_placeholder.container():
+        with st.spinner("Processing image and generating Result"):
+            yolo_result_img, counts, total_count, total_value, gradcam = run_yolo_result(image)
+            st.session_state["yolo_result_img"] = yolo_result_img
+            st.session_state["yolo_counts"] = counts
+            st.session_state["yolo_total_count"] = total_count
+            st.session_state["yolo_total_value"] = total_value
+            st.session_state["yolo_gradcam"] = gradcam
     
-    # Inject variables before execution
-    for cell in nb.cells:
-        if cell.cell_type == "code" and "# PARAMETERS" in cell.source:
-            cell.source = f"""
-    # PARAMETERS
-    img_path = r"{tmp_path}"
-    gradcam_output = None
-    """
-
-    # Create a NotebookClient
-    client = NotebookClient(nb, kernel_name="python3")
-    
-    # Execute the notebook
-    client.execute()
-    
-    gradcam_folder = "YOLOv8/app_result/gradcam_output"
-
-    YOLO_tab, ResNet_tab = st.tabs(models[:2])
-
+    # END: YOLOv8 model ----------------------------------------------------
+if "yolo_gradcam" in st.session_state:
     with YOLO_tab:
-        section = st.pills(None, options=sections, default=sections[0]) 
-        total_value = np.sum(np.array(class_map) * np.array(counts))
-        df = pd.DataFrame({"Coin": coins, "Count": counts})
-        
-        if section == sections[0]:
+        result_img = st.session_state["yolo_result_img"]
+        counts = st.session_state["yolo_counts"]
+        total_count = st.session_state["yolo_total_count"]
+        total_value = st.session_state["yolo_total_value"]
+        gradcam = st.session_state["yolo_gradcam"]
+                
+        if yolo_section == sections[0]:
             each_coin_tab, total_coin_tab, total_value_tab = st.columns([5, 2, 3])
             with each_coin_tab:
                 count_cols = st.columns(4, gap=None, border=True)
@@ -96,19 +80,52 @@ if not btn_disable:
             total_value_tab.metric(label="Total Value (Baht)", value=f"฿{total_value}", border=True)
             st.image(result_img, channels="BGR")
             
-        elif section == section[1]:
+        elif yolo_section == sections[1]:
             pass
         
         else:
-            coin_1, coin_2, coin_5, coin_10 = st.columns(4)
-            for class_name  in os.listdir(gradcam_folder):
-                class_path = os.path.join(gradcam_folder, class_name)
-                for img_file in os.listdir(class_path):
-                    img_path = os.path.join(class_path, img_file)
-                    st.image(img_path, caption=img_file)
-                    
-            coin_1.image("./YOLOv8/app_result/gradcam_output/1/3.jpg")
+            column_header = st.columns([1.3, 2, 2, 2, 2])
+            for i in range(4):
+                column_header[i+1].write(coins[i])
+            layers = [st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2])]
+            layers[0][0].write("layer 3")
+            layers[1][0].write("layer 12-cv2")
+            layers[2][0].write("layer 18-cv1")
+            for i, row in enumerate(gradcam):
+                for col, img_path in zip(layers[i][1:], row):
+                    col.image(img_path)
+    with ResNet_tab:
+        # result_img = st.session_state["resnet_result_img"]
+        # counts = st.session_state["resnet_counts"]
+        # total_count = st.session_state["resnet_total_count"]
+        # total_value = st.session_state["resnet_total_value"]
+        # gradcam = st.session_state["resnet_gradcam"]
         
+        if resnet_section == sections[0]:
+            each_coin_tab, total_coin_tab, total_value_tab = st.columns([5, 2, 3])
+            with each_coin_tab:
+                count_cols = st.columns(4, gap=None, border=True)
+                for i, count_col in enumerate(count_cols):
+                    count_col.metric(label=coins[i], value=counts[i])
+                            
+            total_coin_tab.metric(label="Total Coins", value=total_count, border=True)
+            total_value_tab.metric(label="Total Value (Baht)", value=f"฿{total_value}", border=True)
+            st.image(result_img, channels="BGR")
+            
+        elif resnet_section == sections[1]:
+            pass
+        
+        else:
+            column_header = st.columns([1.3, 2, 2, 2, 2])
+            for i in range(4):
+                column_header[i+1].write(coins[i])
+            layers = [st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2])]
+            layers[0][0].write("layer 3")
+            layers[1][0].write("layer 12-cv2")
+            layers[2][0].write("layer 18-cv1")
+            for i, row in enumerate(gradcam):
+                for col, img_path in zip(layers[i][1:], row):
+                    col.image(img_path)
 # st.code("for i in range(8): foo()")
 # st.badge("New")
 # st.html("<p>Hi!</p>")
