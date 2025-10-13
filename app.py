@@ -41,8 +41,11 @@ if not img_file:
 submit_btn = st.button("Submit", type="primary", disabled=(img_file == None))
 loading_placeholder = st.empty()
 YOLO_tab, ResNet_tab = st.tabs(models[:2])
-yolo_section = YOLO_tab.pills(None, options=sections, default=sections[0], key="yolo")
-resnet_section = ResNet_tab.pills(None, options=sections, default=sections[0], key="resnet")
+yolo_section_pills = YOLO_tab.pills(None, options=sections, default=sections[0], key="yolo")
+yolo_section = YOLO_tab.empty()
+
+resnet_section_pills = ResNet_tab.pills(None, options=sections, default=sections[0], key="resnet")
+resnet_section = ResNet_tab.empty()
 
 # if not btn_disable:
 if submit_btn:
@@ -69,31 +72,34 @@ if "yolo_gradcam" in st.session_state:
         total_value = st.session_state["yolo_total_value"]
         gradcam = st.session_state["yolo_gradcam"]
                 
-        if yolo_section == sections[0]:
-            each_coin_tab, total_coin_tab, total_value_tab = st.columns([5, 2, 3])
-            with each_coin_tab:
-                count_cols = st.columns(4, gap=None, border=True)
-                for i, count_col in enumerate(count_cols):
-                    count_col.metric(label=coins[i], value=counts[i])
-                            
-            total_coin_tab.metric(label="Total Coins", value=total_count, border=True)
-            total_value_tab.metric(label="Total Value (Baht)", value=f"฿{total_value}", border=True)
-            st.image(result_img, channels="BGR")
+        if yolo_section_pills == sections[0]:
+            with yolo_section.container():
+                each_coin_tab, total_coin_tab, total_value_tab = st.columns([5, 2, 3])
+                with each_coin_tab:
+                    count_cols = st.columns(4, gap=None, border=True)
+                    for i, count_col in enumerate(count_cols):
+                        count_col.metric(label=coins[i], value=counts[i])
+                                
+                total_coin_tab.metric(label="Total Coins", value=total_count, border=True)
+                total_value_tab.metric(label="Total Value (Baht)", value=f"฿{total_value}", border=True)
+                st.image(result_img, channels="BGR")
             
-        elif yolo_section == sections[1]:
-            pass
+        elif yolo_section_pills == sections[1]:
+            with yolo_section.container():
+                pass
         
         else:
-            column_header = st.columns([1.3, 2, 2, 2, 2])
-            for i in range(4):
-                column_header[i+1].write(coins[i])
-            layers = [st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2])]
-            layers[0][0].write("layer 3")
-            layers[1][0].write("layer 12-cv2")
-            layers[2][0].write("layer 18-cv1")
-            for i, row in enumerate(gradcam):
-                for col, img_path in zip(layers[i][1:], row):
-                    col.image(img_path)
+            with yolo_section.container():
+                column_header = st.columns([1.3, 2, 2, 2, 2])
+                for i in range(4):
+                    column_header[i+1].write(coins[i])
+                layers = [st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2])]
+                layers[0][0].write("layer 3")
+                layers[1][0].write("layer 12-cv2")
+                layers[2][0].write("layer 18-cv1")
+                for i, row in enumerate(gradcam):
+                    for col, img_path in zip(layers[i][1:], row):
+                        col.image(img_path)
     with ResNet_tab:
         # result_img = st.session_state["resnet_result_img"]
         # counts = st.session_state["resnet_counts"]
@@ -101,31 +107,34 @@ if "yolo_gradcam" in st.session_state:
         # total_value = st.session_state["resnet_total_value"]
         # gradcam = st.session_state["resnet_gradcam"]
         
-        if resnet_section == sections[0]:
-            each_coin_tab, total_coin_tab, total_value_tab = st.columns([5, 2, 3])
-            with each_coin_tab:
-                count_cols = st.columns(4, gap=None, border=True)
-                for i, count_col in enumerate(count_cols):
-                    count_col.metric(label=coins[i], value=counts[i])
-                            
-            total_coin_tab.metric(label="Total Coins", value=total_count, border=True)
-            total_value_tab.metric(label="Total Value (Baht)", value=f"฿{total_value}", border=True)
-            st.image(result_img, channels="BGR")
+        if resnet_section_pills == sections[0]:
+            with resnet_section.container():
+                each_coin_tab, total_coin_tab, total_value_tab = st.columns([5, 2, 3])
+                with each_coin_tab:
+                    count_cols = st.columns(4, gap=None, border=True)
+                    for i, count_col in enumerate(count_cols):
+                        count_col.metric(label=coins[i], value=counts[i])
+                                
+                total_coin_tab.metric(label="Total Coins", value=total_count, border=True)
+                total_value_tab.metric(label="Total Value (Baht)", value=f"฿{total_value}", border=True)
+                st.image(result_img, channels="BGR")
             
-        elif resnet_section == sections[1]:
-            pass
+        elif resnet_section_pills == sections[1]:
+            with resnet_section.container():
+                pass
         
         else:
-            column_header = st.columns([1.3, 2, 2, 2, 2])
-            for i in range(4):
-                column_header[i+1].write(coins[i])
-            layers = [st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2])]
-            layers[0][0].write("layer 3")
-            layers[1][0].write("layer 12-cv2")
-            layers[2][0].write("layer 18-cv1")
-            for i, row in enumerate(gradcam):
-                for col, img_path in zip(layers[i][1:], row):
-                    col.image(img_path)
+            with resnet_section.container():
+                column_header = st.columns([1.3, 2, 2, 2, 2])
+                for i in range(4):
+                    column_header[i+1].write(coins[i])
+                layers = [st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2])]
+                layers[0][0].write("layer 3")
+                layers[1][0].write("layer 12-cv2")
+                layers[2][0].write("layer 18-cv1")
+                for i, row in enumerate(gradcam):
+                    for col, img_path in zip(layers[i][1:], row):
+                        col.image(img_path)
 # st.code("for i in range(8): foo()")
 # st.badge("New")
 # st.html("<p>Hi!</p>")
