@@ -56,12 +56,13 @@ if submit_btn:
     # START: YOLOv8 model ----------------------------------------------------
     with loading_placeholder.container():
         with st.spinner("Processing image and generating Result"):
-            yolo_result_img, counts, total_count, total_value, gradcam = run_yolo_result(image)
+            yolo_result_img, counts, total_count, total_value, gradcam, feature_map_path = run_yolo_result(image)
             st.session_state["yolo_result_img"] = yolo_result_img
             st.session_state["yolo_counts"] = counts
             st.session_state["yolo_total_count"] = total_count
             st.session_state["yolo_total_value"] = total_value
             st.session_state["yolo_gradcam"] = gradcam
+            st.session_state["yolo_feature_map"] = feature_map_path
     
     # END: YOLOv8 model ----------------------------------------------------
 if "yolo_gradcam" in st.session_state:
@@ -71,6 +72,7 @@ if "yolo_gradcam" in st.session_state:
         total_count = st.session_state["yolo_total_count"]
         total_value = st.session_state["yolo_total_value"]
         gradcam = st.session_state["yolo_gradcam"]
+        feature_map = st.session_state["yolo_feature_map"]
                 
         if yolo_section_pills == sections[0]:
             with yolo_section.container():
@@ -86,7 +88,11 @@ if "yolo_gradcam" in st.session_state:
             
         elif yolo_section_pills == sections[1]:
             with yolo_section.container():
-                pass
+                cols = st.columns(len(feature_map), gap="small")
+
+                for col, path in zip(cols, feature_map):
+                    with col:
+                        st.image(path, caption=os.path.splitext(os.path.basename(path))[0], use_container_width=True)
         
         else:
             with yolo_section.container():
