@@ -40,124 +40,122 @@ if not img_file:
     ':red[Please upload an image to proceed.]'
 
 submit_btn = st.button("Submit", type="primary", disabled=(img_file == None))
-loading_placeholder = st.empty()
-YOLO_tab, RCNN_tab = st.tabs(models[:2])
-yolo_section_pills = YOLO_tab.pills(None, options=sections, default=sections[0], key="yolo")
-yolo_section = YOLO_tab.empty()
-
-rcnn_section_pills = RCNN_tab.pills(None, options=sections, default=sections[0], key="rcnn")
-rcnn_section = RCNN_tab.empty()
+status_yolo = st.empty()
+status_rcnn = st.empty()
 
 # if not btn_disable:
 if submit_btn:
     st.session_state.clear()
     # open uploaded image
     image = Image.open(img_file)
-    
-    # START: YOLOv8 model ----------------------------------------------------
-    with loading_placeholder.container():
-        with st.spinner("Processing image and generating Result"):
+
+    with status_yolo.container():
+        with st.spinner("(1/2) YOLOv8: Processing image and generating result..."):
             yolo_result_img, counts, total_count, total_value, gradcam, feature_map_path = run_yolo_result(image)
             st.session_state["yolo_result_img"] = yolo_result_img
             st.session_state["yolo_counts"] = counts
             st.session_state["yolo_total_count"] = total_count
             st.session_state["yolo_total_value"] = total_value
-            st.session_state["yolo_gradcam"] = gradcam
             st.session_state["yolo_feature_map"] = feature_map_path
-    
-    # END: YOLOv8 model ----------------------------------------------------
+            st.session_state["yolo_gradcam"] = gradcam
+        status_yolo.text("(1/2) YOLOv8: Done ✅")
 
-    # START: FasterRCNN model ----------------------------------------------------
-    with loading_placeholder.container():
-        with st.spinner("Processing image and generating Result"):
+    with status_rcnn.container():
+        with st.spinner("(2/2) FasterRCNN: Processing image and generating result..."):
             rcnn_result_img, counts, total_count, total_value, gradcam = run_fasterrcnn_result(image)
             st.session_state["rcnn_result_img"] = rcnn_result_img
             st.session_state["rcnn_counts"] = counts
             st.session_state["rcnn_total_count"] = total_count
             st.session_state["rcnn_total_value"] = total_value
             st.session_state["rcnn_gradcam"] = gradcam
+        status_rcnn.text("(2/2) FasterRCNN: Done ✅")
 
-    # END: FasterRCNN model ----------------------------------------------------
+if "yolo_gradcam" in st.session_state and "rcnn_gradcam" in st.session_state:
+    YOLO_tab, RCNN_tab = st.tabs(models[:2])
+    yolo_section_pills = YOLO_tab.pills(None, options=sections, default=sections[0], key="yolo")
+    yolo_section = YOLO_tab.empty()
 
+    rcnn_section_pills = RCNN_tab.pills(None, options=sections, default=sections[0], key="rcnn")
+    rcnn_section = RCNN_tab.empty()
 
-if "yolo_gradcam" in st.session_state:
-    with YOLO_tab:
-        result_img = st.session_state["yolo_result_img"]
-        counts = st.session_state["yolo_counts"]
-        total_count = st.session_state["yolo_total_count"]
-        total_value = st.session_state["yolo_total_value"]
-        gradcam = st.session_state["yolo_gradcam"]
-        feature_map = st.session_state["yolo_feature_map"]
+    if "yolo_gradcam" in st.session_state:
+        with YOLO_tab:
+            result_img = st.session_state["yolo_result_img"]
+            counts = st.session_state["yolo_counts"]
+            total_count = st.session_state["yolo_total_count"]
+            total_value = st.session_state["yolo_total_value"]
+            gradcam = st.session_state["yolo_gradcam"]
+            feature_map = st.session_state["yolo_feature_map"]
+                    
+            if yolo_section_pills == sections[0]:
+                with yolo_section.container():
+                    each_coin_tab, total_coin_tab, total_value_tab = st.columns([5, 2, 3])
+                    with each_coin_tab:
+                        count_cols = st.columns(4, gap=None, border=True)
+                        for i, count_col in enumerate(count_cols):
+                            count_col.metric(label=coins[i], value=counts[i])
+                                    
+                    total_coin_tab.metric(label="Total Coins", value=total_count, border=True)
+                    total_value_tab.metric(label="Total Value (Baht)", value=f"฿{total_value}", border=True)
+                    st.image(result_img, channels="BGR")
                 
-        if yolo_section_pills == sections[0]:
-            with yolo_section.container():
-                each_coin_tab, total_coin_tab, total_value_tab = st.columns([5, 2, 3])
-                with each_coin_tab:
-                    count_cols = st.columns(4, gap=None, border=True)
-                    for i, count_col in enumerate(count_cols):
-                        count_col.metric(label=coins[i], value=counts[i])
-                                
-                total_coin_tab.metric(label="Total Coins", value=total_count, border=True)
-                total_value_tab.metric(label="Total Value (Baht)", value=f"฿{total_value}", border=True)
-                st.image(result_img, channels="BGR")
+            elif yolo_section_pills == sections[1]:
+                with yolo_section.container():
+                    cols = st.columns(len(feature_map), gap="small")
+
+                    for col, path in zip(cols, feature_map):
+                        with col:
+                            st.image(path, caption=os.path.splitext(os.path.basename(path))[0], use_container_width=True)
             
-        elif yolo_section_pills == sections[1]:
-            with yolo_section.container():
-                cols = st.columns(len(feature_map), gap="small")
+            else:
+                with yolo_section.container():
+                    column_header = st.columns([1.3, 2, 2, 2, 2])
+                    for i in range(4):
+                        column_header[i+1].write(coins[i])
+                    layers = [st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2])]
+                    layers[0][0].write("layer 3")
+                    layers[1][0].write("layer 12-cv2")
+                    layers[2][0].write("layer 18-cv1")
+                    for i, row in enumerate(gradcam):
+                        for col, img_path in zip(layers[i][1:], row):
+                            col.image(img_path)
 
-                for col, path in zip(cols, feature_map):
-                    with col:
-                        st.image(path, caption=os.path.splitext(os.path.basename(path))[0], use_container_width=True)
-        
-        else:
-            with yolo_section.container():
-                column_header = st.columns([1.3, 2, 2, 2, 2])
-                for i in range(4):
-                    column_header[i+1].write(coins[i])
-                layers = [st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2])]
-                layers[0][0].write("layer 3")
-                layers[1][0].write("layer 12-cv2")
-                layers[2][0].write("layer 18-cv1")
-                for i, row in enumerate(gradcam):
-                    for col, img_path in zip(layers[i][1:], row):
-                        col.image(img_path)
+    if "rcnn_gradcam" in st.session_state:
+        with RCNN_tab:
+            result_img = st.session_state["rcnn_result_img"]
+            counts = st.session_state["rcnn_counts"]
+            total_count = st.session_state["rcnn_total_count"]
+            total_value = st.session_state["rcnn_total_value"]
+            gradcam = st.session_state["rcnn_gradcam"]
 
-if "rcnn_gradcam" in st.session_state:
-    with RCNN_tab:
-        result_img = st.session_state["rcnn_result_img"]
-        counts = st.session_state["rcnn_counts"]
-        total_count = st.session_state["rcnn_total_count"]
-        total_value = st.session_state["rcnn_total_value"]
-        gradcam = st.session_state["rcnn_gradcam"]
+            if rcnn_section_pills == sections[0]:
+                with rcnn_section.container():
+                    each_coin_tab, total_coin_tab, total_value_tab = st.columns([5, 2, 3])
+                    with each_coin_tab:
+                        count_cols = st.columns(4, gap=None, border=True)
+                        for i, count_col in enumerate(count_cols):
+                            count_col.metric(label=coins[i], value=counts[i])
+                                    
+                    total_coin_tab.metric(label="Total Coins", value=total_count, border=True)
+                    total_value_tab.metric(label="Total Value (Baht)", value=f"฿{total_value}", border=True)
+                    st.image(result_img, channels="BGR")
 
-        if rcnn_section_pills == sections[0]:
-            with rcnn_section.container():
-                each_coin_tab, total_coin_tab, total_value_tab = st.columns([5, 2, 3])
-                with each_coin_tab:
-                    count_cols = st.columns(4, gap=None, border=True)
-                    for i, count_col in enumerate(count_cols):
-                        count_col.metric(label=coins[i], value=counts[i])
-                                
-                total_coin_tab.metric(label="Total Coins", value=total_count, border=True)
-                total_value_tab.metric(label="Total Value (Baht)", value=f"฿{total_value}", border=True)
-                st.image(result_img, channels="BGR")
-
-        elif rcnn_section_pills == sections[1]:
-            with rcnn_section.container():
-                pass
-        
-        else:
-            with rcnn_section.container():
-                column_header = st.columns([1.3, 2, 2, 2, 2])
-                for i in range(4):
-                    column_header[i+1].write(coins[i])
-                layers = [st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2])]
-                layers[0][0].write("layer 2-cv3")
-                layers[1][0].write("layer 3-cv3")
-                layers[2][0].write("layer 4-cv3")
-                for i, row in enumerate(gradcam):
-                    for col, img_path in zip(layers[i][1:], row):
-                        col.image(img_path)
+            elif rcnn_section_pills == sections[1]:
+                with rcnn_section.container():
+                    pass
+            
+            else:
+                with rcnn_section.container():
+                    column_header = st.columns([1.3, 2, 2, 2, 2])
+                    for i in range(4):
+                        column_header[i+1].write(coins[i])
+                    layers = [st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2])]
+                    layers[0][0].write("layer 2-cv3")
+                    layers[1][0].write("layer 3-cv3")
+                    layers[2][0].write("layer 4-cv3")
+                    for i, row in enumerate(gradcam):
+                        for col, img_path in zip(layers[i][1:], row):
+                            col.image(img_path)
 
 
     # with RCNN_tab:
