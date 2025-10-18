@@ -62,11 +62,12 @@ if submit_btn:
 
     with status_rcnn.container():
         with st.spinner("(2/2) FasterRCNN: Processing image and generating result..."):
-            rcnn_result_img, counts, total_count, total_value, gradcam = run_fasterrcnn_result(image)
+            rcnn_result_img, counts, total_count, total_value, gradcam, feature_map_path = run_fasterrcnn_result(image)
             st.session_state["rcnn_result_img"] = rcnn_result_img
             st.session_state["rcnn_counts"] = counts
             st.session_state["rcnn_total_count"] = total_count
             st.session_state["rcnn_total_value"] = total_value
+            st.session_state["rcnn_feature_map"] = feature_map_path
             st.session_state["rcnn_gradcam"] = gradcam
         status_rcnn.text("(2/2) FasterRCNN: Done ✅")
 
@@ -127,6 +128,7 @@ if "yolo_gradcam" in st.session_state and "rcnn_gradcam" in st.session_state:
             total_count = st.session_state["rcnn_total_count"]
             total_value = st.session_state["rcnn_total_value"]
             gradcam = st.session_state["rcnn_gradcam"]
+            feature_map = st.session_state["rcnn_feature_map"]
 
             if rcnn_section_pills == sections[0]:
                 with rcnn_section.container():
@@ -142,7 +144,11 @@ if "yolo_gradcam" in st.session_state and "rcnn_gradcam" in st.session_state:
 
             elif rcnn_section_pills == sections[1]:
                 with rcnn_section.container():
-                    pass
+                    cols = st.columns(len(feature_map), gap="small")
+
+                    for col, path in zip(cols, feature_map):
+                        with col:
+                            st.image(path, caption=os.path.splitext(os.path.basename(path))[0], use_container_width=True)
             
             else:
                 with rcnn_section.container():

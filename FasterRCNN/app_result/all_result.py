@@ -1,5 +1,6 @@
 import streamlit as st
 from FasterRCNN.app_result.detect import run_fasterrcnn_detection
+from .feature_map import save_feature_maps
 # from FasterRCNN.app_result.grad_cam import run_gradcam
 import tempfile
 import nbformat
@@ -52,4 +53,5 @@ def run_fasterrcnn_result(_image):
             if col is not None:
                 gradcam_grid[row][col] = img_path
 
-    return faster_result_img, counts, total_count, total_value, gradcam_grid
+    feature_map_paths = save_feature_maps(_image, save_dir="FasterRCNN/app_result/feature_map")
+    return faster_result_img, counts, total_count, total_value, gradcam_grid, feature_map_paths
