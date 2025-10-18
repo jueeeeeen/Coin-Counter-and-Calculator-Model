@@ -146,9 +146,9 @@ if "rcnn_gradcam" in st.session_state:
                 for i in range(4):
                     column_header[i+1].write(coins[i])
                 layers = [st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2])]
-                layers[0][0].write("layer 3")
-                layers[1][0].write("layer 12-cv2")
-                layers[2][0].write("layer 18-cv1")
+                layers[0][0].write("layer 2-cv3")
+                layers[1][0].write("layer 3-cv3")
+                layers[2][0].write("layer 4-cv3")
                 for i, row in enumerate(gradcam):
                     for col, img_path in zip(layers[i][1:], row):
                         col.image(img_path)
