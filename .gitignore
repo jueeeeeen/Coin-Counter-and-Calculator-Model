@@ -1,4 +1,7 @@
 dataset/
+datasetCoco/
+datasetCocoTrainTest/
 temp
 YOLOv8/folds/
 YOLOv8/GradCam/correct/separated/
+FasterRCNN/k_fold_checkpoints/

@@ -4,10 +4,11 @@ import pandas as pd
 import time
 from PIL import Image
 from YOLOv8.app_result.all_result import run_yolo_result
+from FasterRCNN.app_result.all_result import run_fasterrcnn_result
 import os
 
 
-models = ["YOLOv8", "ResNet50", "See Both"]
+models = ["YOLOv8", "FasterRCNN", "See Both"]
 img_types = ["jpg", "jpeg", "png"]
 class_map = [1, 2, 5, 10]
 coins  = ["1 Baht", "2 Baht", "5 Baht", "10 Baht"]
@@ -17,7 +18,7 @@ sections = ["Overview", "Feature map", "Grad-CAM"]
 # :color[text] - color text
 st.title("Coin Counter and Calculator 🪙")
 st.markdown("#### Upload a picture of :rainbow[coins] and let us handle counting for you!")
-"A project of **Image Processing Course**. This project uses both YOLOv8 model and ResNet50 model for coin detection. We also provide a feature to count coins in an image including calculating the total value."
+"A project of **Image Processing Course**. This project uses both YOLOv8 model and FasterRCNN model for coin detection. We also provide a feature to count coins in an image including calculating the total value."
 # st.html("<p>hi</p>")
 st.markdown("source code [GitHub](%s)" % "https://github.com/jueeeeeen/Coin-Counter-and-Calculator-Model")
 ''
@@ -40,12 +41,12 @@ if not img_file:
 
 submit_btn = st.button("Submit", type="primary", disabled=(img_file == None))
 loading_placeholder = st.empty()
-YOLO_tab, ResNet_tab = st.tabs(models[:2])
+YOLO_tab, RCNN_tab = st.tabs(models[:2])
 yolo_section_pills = YOLO_tab.pills(None, options=sections, default=sections[0], key="yolo")
 yolo_section = YOLO_tab.empty()
 
-resnet_section_pills = ResNet_tab.pills(None, options=sections, default=sections[0], key="resnet")
-resnet_section = ResNet_tab.empty()
+rcnn_section_pills = RCNN_tab.pills(None, options=sections, default=sections[0], key="rcnn")
+rcnn_section = RCNN_tab.empty()
 
 # if not btn_disable:
 if submit_btn:
@@ -64,6 +65,20 @@ if submit_btn:
             st.session_state["yolo_gradcam"] = gradcam
     
     # END: YOLOv8 model ----------------------------------------------------
+
+    # START: FasterRCNN model ----------------------------------------------------
+    with loading_placeholder.container():
+        with st.spinner("Processing image and generating Result"):
+            rcnn_result_img, counts, total_count, total_value, gradcam = run_fasterrcnn_result(image)
+            st.session_state["rcnn_result_img"] = rcnn_result_img
+            st.session_state["rcnn_counts"] = counts
+            st.session_state["rcnn_total_count"] = total_count
+            st.session_state["rcnn_total_value"] = total_value
+            st.session_state["rcnn_gradcam"] = gradcam
+
+    # END: FasterRCNN model ----------------------------------------------------
+
+
 if "yolo_gradcam" in st.session_state:
     with YOLO_tab:
         result_img = st.session_state["yolo_result_img"]
@@ -100,15 +115,17 @@ if "yolo_gradcam" in st.session_state:
                 for i, row in enumerate(gradcam):
                     for col, img_path in zip(layers[i][1:], row):
                         col.image(img_path)
-    with ResNet_tab:
-        # result_img = st.session_state["resnet_result_img"]
-        # counts = st.session_state["resnet_counts"]
-        # total_count = st.session_state["resnet_total_count"]
-        # total_value = st.session_state["resnet_total_value"]
-        # gradcam = st.session_state["resnet_gradcam"]
-        
-        if resnet_section_pills == sections[0]:
-            with resnet_section.container():
+
+if "rcnn_gradcam" in st.session_state:
+    with RCNN_tab:
+        result_img = st.session_state["rcnn_result_img"]
+        counts = st.session_state["rcnn_counts"]
+        total_count = st.session_state["rcnn_total_count"]
+        total_value = st.session_state["rcnn_total_value"]
+        gradcam = st.session_state["rcnn_gradcam"]
+
+        if rcnn_section_pills == sections[0]:
+            with rcnn_section.container():
                 each_coin_tab, total_coin_tab, total_value_tab = st.columns([5, 2, 3])
                 with each_coin_tab:
                     count_cols = st.columns(4, gap=None, border=True)
@@ -118,13 +135,13 @@ if "yolo_gradcam" in st.session_state:
                 total_coin_tab.metric(label="Total Coins", value=total_count, border=True)
                 total_value_tab.metric(label="Total Value (Baht)", value=f"฿{total_value}", border=True)
                 st.image(result_img, channels="BGR")
-            
-        elif resnet_section_pills == sections[1]:
-            with resnet_section.container():
+
+        elif rcnn_section_pills == sections[1]:
+            with rcnn_section.container():
                 pass
         
         else:
-            with resnet_section.container():
+            with rcnn_section.container():
                 column_header = st.columns([1.3, 2, 2, 2, 2])
                 for i in range(4):
                     column_header[i+1].write(coins[i])
@@ -135,6 +152,43 @@ if "yolo_gradcam" in st.session_state:
                 for i, row in enumerate(gradcam):
                     for col, img_path in zip(layers[i][1:], row):
                         col.image(img_path)
+
+
+    # with RCNN_tab:
+    #     # result_img = st.session_state["resnet_result_img"]
+    #     # counts = st.session_state["resnet_counts"]
+    #     # total_count = st.session_state["resnet_total_count"]
+    #     # total_value = st.session_state["resnet_total_value"]
+    #     # gradcam = st.session_state["resnet_gradcam"]
+        
+    #     if rcnn_section_pills == sections[0]:
+    #         with rcnn_section.container():
+    #             each_coin_tab, total_coin_tab, total_value_tab = st.columns([5, 2, 3])
+    #             with each_coin_tab:
+    #                 count_cols = st.columns(4, gap=None, border=True)
+    #                 for i, count_col in enumerate(count_cols):
+    #                     count_col.metric(label=coins[i], value=counts[i])
+                                
+    #             total_coin_tab.metric(label="Total Coins", value=total_count, border=True)
+    #             total_value_tab.metric(label="Total Value (Baht)", value=f"฿{total_value}", border=True)
+    #             st.image(result_img, channels="BGR")
+
+    #     elif rcnn_section_pills == sections[1]:
+    #         with rcnn_section.container():
+    #             pass
+        
+    #     else:
+    #         with rcnn_section.container():
+    #             column_header = st.columns([1.3, 2, 2, 2, 2])
+    #             for i in range(4):
+    #                 column_header[i+1].write(coins[i])
+    #             layers = [st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2]), st.columns([1.3, 2, 2, 2, 2])]
+    #             layers[0][0].write("layer 3")
+    #             layers[1][0].write("layer 12-cv2")
+    #             layers[2][0].write("layer 18-cv1")
+    #             for i, row in enumerate(gradcam):
+    #                 for col, img_path in zip(layers[i][1:], row):
+    #                     col.image(img_path)
 # st.code("for i in range(8): foo()")
 # st.badge("New")
 # st.html("<p>Hi!</p>")
