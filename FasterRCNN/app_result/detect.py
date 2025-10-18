@@ -48,9 +48,9 @@ def run_fasterrcnn_detection(img):
     classes = ["__background__", "1", "10", "2", "5"]
     preds = model([img])[0]
     pred_boxes = preds["boxes"].cpu()
-    pred_labels = preds["labels"].cpu().numpy()
+    pred_labels = preds["labels"].cpu()
     pred_scores = preds["scores"].cpu()
-
+    
     pred_boxes, pred_labels, pred_scores = filter_nms(
         pred_boxes, pred_labels, pred_scores, iou_threshold=0.5, score_threshold=0.5
     )
