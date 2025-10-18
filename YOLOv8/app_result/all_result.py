@@ -4,6 +4,7 @@ import tempfile
 import nbformat
 import os
 import numpy as np
+from .feature_map import save_feature_maps
 from nbclient import NotebookClient
 
 
@@ -51,4 +52,6 @@ def run_yolo_result(_image):
             if col is not None:
                 gradcam_grid[row][col] = img_path
     
-    return yolo_result_img, counts, total_count, total_value, gradcam_grid
+    feauture_map_paths = save_feature_maps(_image, save_dir="YOLOv8/app_result/feature_map")
+    
+    return yolo_result_img, counts, total_count, total_value, gradcam_grid, feauture_map_paths
