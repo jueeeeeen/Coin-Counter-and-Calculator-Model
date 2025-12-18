@@ -7,3 +7,5 @@ YOLOv8/GradCam/correct/separated/
 FasterRCNN/k_fold_checkpoints/
 FasterRCNN/app_result/__pycache__/
 YOLOv8/app_result/__pycache__/
+folds
+__pycache__
